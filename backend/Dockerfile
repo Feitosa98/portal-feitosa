@@ -2,6 +2,9 @@
 # Base image
 FROM node:18-alpine
 
+# Install system dependencies
+RUN apk add --no-cache openssl
+
 # Working directory
 WORKDIR /app
 
