@@ -27,7 +27,7 @@ EXPOSE 3001
 # Environment variables (Documenting, to be set in execution)
 ENV NODE_ENV=production
 ENV PORT=3001
-ENV DATABASE_URL="file:./prod.db"
+ENV DATABASE_URL="file:/app/data/prod.db"
 
 # Startup command (using built files)
 CMD ["npm", "start"]
