@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { CreditCard, Plus, X } from 'lucide-react';
+import { CreditCard, Plus, X, Download } from 'lucide-react';
 
 interface Boleto {
     id: string;
@@ -12,6 +12,7 @@ interface Boleto {
     dueDate: string;
     status: string;
     digitableLine?: string;
+    pdfUrl?: string;
     client: {
         user: {
             name: string;
@@ -171,8 +172,12 @@ export default function BoletosPage() {
                                             Status
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Linha Digitável
-                                        </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                Linha Digitável
+                                            </th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                                                Ações
+                                            </th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -207,6 +212,19 @@ export default function BoletosPage() {
                                                 <div className="text-xs text-gray-600 font-mono">
                                                     {boleto.digitableLine || '-'}
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                {boleto.pdfUrl && (
+                                                    <a
+                                                        href={boleto.pdfUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-600 hover:text-blue-900 flex items-center justify-end gap-1"
+                                                    >
+                                                        <Download className="h-4 w-4" />
+                                                        PDF
+                                                    </a>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
