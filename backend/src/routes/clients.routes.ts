@@ -117,36 +117,36 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
         const { companyName, cnpj, cpf, phone, address, city, state, zipCode, name, email } = req.body;
 
         // Check authorization
-        const existingClient = await prisma.client.findUnique({ where: { id } });
-        if (!existingClient) {
-            return res.status(404).json({ error: 'Cliente não encontrado' });
-        }
-
-        if (req.user!.role !== 'ADMIN' && existingClient.userId !== req.user!.userId) {
+        // We assume :id is the userId based on other routes usage
+        if (req.user!.role !== 'ADMIN' && id !== req.user!.userId) {
             return res.status(403).json({ error: 'Acesso negado' });
         }
 
         // Update client
         const client = await prisma.client.update({
-            where: { id },
+            where: { userId: id as string },
             data: {
                 companyName,
                 cnpj,
                 cpf,
                 phone,
                 address,
-                where: { userId: id as string },
+                city,
+                state,
+                zipCode,
+            },
+        });
+
+        // Update user if name or email provided (admin only or self?) -> let's allow self to update name/email
+        if (name || email) {
+            await prisma.user.update({
+                where: { id: id as string },
                 data: {
-                    companyName,
-                    cnpj,
-                    cpf,
-                    phone,
-                    address,
-                    city,
-                    state,
-                    zipCode,
+                    ...(name && { name }),
+                    ...(email && { email }),
                 },
             });
+        }
 
         res.json(client);
     } catch (error) {
