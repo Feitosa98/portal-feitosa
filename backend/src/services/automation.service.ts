@@ -60,7 +60,46 @@ class AutomationService {
      */
     private async generateReceipt(confirmation: any, boleto: any): Promise<void> {
         try {
-            const receiptNumber = `REC-${Date.now()}`;
+            const receiptNumber = `${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}-${new Date().getFullYear().toString().slice(-2)}`;
+
+            // Generate PDF using receipt service
+            const { receiptService } = require('./receipt.service');
+            const fileName = `REC${Date.now()}.pdf`;
+            const filePath = `uploads/receipts/${fileName}`;
+
+            // Parse description to extract items if available
+            const items = [];
+            if (boleto.description) {
+                items.push({
+                    name: boleto.description,
+                    quantity: 1,
+                    unit: 'un',
+                    unitPrice: confirmation.amount,
+                    totalPrice: confirmation.amount,
+                });
+            }
+
+            await receiptService.generatePDF(
+                {
+                    clientId: boleto.clientId,
+                    amount: confirmation.amount,
+                    description: boleto.description || 'Pagamento recebido',
+                    clientInfo: {
+                        name: boleto.client.user.name,
+                        companyName: boleto.client.companyName,
+                        cnpj: boleto.client.cnpj,
+                        cpf: boleto.client.cpf,
+                        address: boleto.client.address,
+                        city: boleto.client.city,
+                        state: boleto.client.state,
+                        zipCode: boleto.client.zipCode,
+                    },
+                    items,
+                    paymentDate: confirmation.paymentDate,
+                    receiptNumber,
+                },
+                filePath
+            );
 
             const receipt = await prisma.receipt.create({
                 data: {
@@ -70,6 +109,7 @@ class AutomationService {
                     amount: confirmation.amount,
                     description: boleto.description || 'Pagamento recebido',
                     issueDate: confirmation.paymentDate,
+                    pdfPath: `/uploads/receipts/${fileName}`,
                 },
             });
 
@@ -83,14 +123,14 @@ class AutomationService {
             try {
                 await emailService.sendReceipt(
                     boleto.client.user.email,
-                    `/api/receipts/${receipt.id}`,
+                    `/uploads/receipts/${fileName}`,
                     receiptNumber
                 );
             } catch (emailError) {
                 console.error('Failed to send receipt email:', emailError);
             }
 
-            console.log('Receipt generated:', receiptNumber);
+            console.log('Receipt generated:', receiptNumber, 'PDF:', fileName);
         } catch (error) {
             console.error('Receipt generation error:', error);
             throw error;
