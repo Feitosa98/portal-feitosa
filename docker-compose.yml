@@ -31,7 +31,9 @@ services:
     container_name: portal-web
     restart: always
     environment:
-      - NEXT_PUBLIC_API_URL=http://18.229.137.98/api  # Public IP for client-side access
+      - NEXT_PUBLIC_API_URL=http://18.229.137.98/api
+      - PORT=3000
+      - HOSTNAME=0.0.0.0  # Public IP for client-side access
     ports:
       - "3000:3000"
     networks:
