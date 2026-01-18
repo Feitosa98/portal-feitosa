@@ -12,7 +12,7 @@ interface Invoice {
     amount: number;
     issueDate: string;
     status: string;
-    pdfUrl?: string;
+    nfePdf?: string;
     client: {
         user: {
             name: string;
@@ -171,9 +171,9 @@ export default function NotasFiscaisPage() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                {invoice.pdfUrl && (
+                                                {invoice.nfePdf && (
                                                     <a
-                                                        href={invoice.pdfUrl}
+                                                        href={invoice.nfePdf}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="text-blue-600 hover:text-blue-900 flex items-center justify-end gap-1"

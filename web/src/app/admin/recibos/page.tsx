@@ -11,7 +11,7 @@ interface ReceiptData {
     amount: number;
     issueDate: string;
     description: string;
-    pdfUrl?: string;
+    pdfPath?: string;
     client: {
         user: {
             name: string;
@@ -136,9 +136,9 @@ export default function RecibosPage() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                {receipt.pdfUrl && (
+                                                {receipt.pdfPath && (
                                                     <a
-                                                        href={receipt.pdfUrl}
+                                                        href={receipt.pdfPath}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="text-blue-600 hover:text-blue-900 flex items-center justify-end gap-1"
