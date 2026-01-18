@@ -97,12 +97,14 @@ export default function AdminDashboard() {
                         value={stats.invoices}
                         icon={<FileText className="h-8 w-8" />}
                         color="green"
+                        href="/admin/notas-fiscais"
                     />
                     <StatCard
                         title="Recibos"
                         value={stats.receipts}
                         icon={<Receipt className="h-8 w-8" />}
                         color="purple"
+                        href="/admin/recibos"
                     />
                     <StatCard
                         title="Boletos"
