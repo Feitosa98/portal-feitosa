@@ -41,7 +41,7 @@ class EmailService {
     private async createTransporter() {
         const config = await this.getConfig();
 
-        return nodemailer.createTransporter({
+        return nodemailer.createTransport({
             host: config.host,
             port: config.port,
             secure: config.secure,

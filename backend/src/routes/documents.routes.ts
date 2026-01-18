@@ -44,7 +44,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
         }
 
         if (req.query.type) {
-            where.type = req.query.type;
+            where.type = req.query.type as string;
         }
 
         const documents = await prisma.document.findMany({
@@ -105,7 +105,7 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
     try {
         const { id } = req.params;
 
-        const document = await prisma.document.findUnique({ where: { id } });
+        const document = await prisma.document.findUnique({ where: { id: id as string } });
         if (!document) {
             return res.status(404).json({ error: 'Documento não encontrado' });
         }

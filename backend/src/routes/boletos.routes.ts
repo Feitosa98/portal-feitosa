@@ -65,7 +65,7 @@ router.post('/', authMiddleware, adminOnly, async (req: AuthRequest, res: Respon
             description,
             clientInfo: {
                 name: boleto.client.user.name,
-                cpfCnpj: boleto.client.cpfCnpj,
+                cpfCnpj: boleto.client.cnpj || boleto.client.cpf || '',
                 email: boleto.client.user.email,
             }
         });
@@ -94,7 +94,7 @@ router.patch('/:id/status', authMiddleware, adminOnly, async (req: AuthRequest, 
         const { status, paymentDate, paidAmount } = req.body;
 
         const boleto = await prisma.boleto.update({
-            where: { id },
+            where: { id: id as string },
             data: {
                 status,
                 paymentDate: paymentDate ? new Date(paymentDate) : undefined,

@@ -50,7 +50,7 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
         const { id } = req.params;
 
         const invoice = await prisma.invoice.findUnique({
-            where: { id },
+            where: { id: id as string },
             include: {
                 client: {
                     include: {
@@ -122,7 +122,7 @@ router.put('/:id', authMiddleware, adminOnly, async (req: AuthRequest, res: Resp
         const { number, series, amount, description, nfeKey, nfeXml, nfePdf } = req.body;
 
         const invoice = await prisma.invoice.update({
-            where: { id },
+            where: { id: id as string },
             data: {
                 number,
                 series,
@@ -146,7 +146,7 @@ router.delete('/:id', authMiddleware, adminOnly, async (req: AuthRequest, res: R
     try {
         const { id } = req.params;
 
-        await prisma.invoice.delete({ where: { id } });
+        await prisma.invoice.delete({ where: { id: id as string } });
 
         res.json({ message: 'Nota fiscal deletada com sucesso' });
     } catch (error) {
