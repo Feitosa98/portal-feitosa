@@ -7,8 +7,7 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm ci --only=production
-RUN npm install typescript tsx -g
+RUN npm ci
 
 # Copy source
 COPY . .
@@ -16,9 +15,11 @@ COPY . .
 # Generate Prisma Client
 RUN npx prisma generate
 
-# Build (if necessary, though we use tsx in dev, for prod usually tsc is better, but let's stick to tsx for simplicity or build)
-# Let's build to JS for better performance
+# Build
 RUN npm run build
+
+# Remove devDependencies to keep image small
+RUN npm prune --production
 
 # Expose port
 EXPOSE 3001
