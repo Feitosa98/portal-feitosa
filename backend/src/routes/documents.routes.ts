@@ -125,7 +125,7 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
             fs.unlinkSync(document.filePath);
         }
 
-        await prisma.document.delete({ where: { id } });
+        await prisma.document.delete({ where: { id: id as string } });
 
         res.json({ message: 'Documento deletado com sucesso' });
     } catch (error) {
