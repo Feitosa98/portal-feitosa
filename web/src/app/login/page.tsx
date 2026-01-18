@@ -30,9 +30,7 @@ export default function LoginPage() {
                 router.push('/dashboard');
             }
         } catch (err: any) {
-            console.error('Login error:', err);
-            const errorMessage = err.response?.data?.error || err.message || JSON.stringify(err);
-            setError(String(errorMessage));
+            setError(err.response?.data?.error || 'Erro ao fazer login');
         } finally {
             setLoading(false);
         }
@@ -47,15 +45,9 @@ export default function LoginPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Debug Info - Remove after fixing */}
-                    <div className="text-xs text-gray-400 bg-gray-50 p-2 rounded">
-                        API URL: {process.env.NEXT_PUBLIC_API_URL}
-                    </div>
-
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                            <p className="font-bold">Erro:</p>
-                            <pre className="whitespace-pre-wrap">{error}</pre>
+                            {error}
                         </div>
                     )}
 
