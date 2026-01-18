@@ -1,0 +1,57 @@
+
+version: '3.9'
+
+services:
+  # Backend API
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: portal-backend
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=file:./prod.db
+      - JWT_SECRET=change_this_to_a_secure_secret_in_prod
+      - UPLOAD_DIR=uploads/documents
+    volumes:
+      - ./backend_data:/app/prisma
+      - ./uploads:/app/uploads
+    ports:
+      - "3001:3001"
+    networks:
+      - portal-net
+
+  # Web Frontend
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: portal-web
+    restart: always
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:80/api  # Client-side (browser) access via Nginx
+    ports:
+      - "3000:3000"
+    networks:
+      - portal-net
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: portal-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
+      - web
+    networks:
+      - portal-net
+
+networks:
+  portal-net:
+    driver: bridge
