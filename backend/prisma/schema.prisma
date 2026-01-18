@@ -1,0 +1,217 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite doesn't support enums, so we use String with default values
+// Valid values for role: "ADMIN", "CLIENT"
+// Valid values for documentType: "CERTIFICATE", "INVENTORY", "GENERAL"
+// Valid values for boletoStatus: "PENDING", "PAID", "CANCELLED", "EXPIRED"
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("CLIENT") // "ADMIN" or "CLIENT"
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client Client?
+
+  @@map("users")
+}
+
+model Client {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Company Info
+  companyName String?
+  cnpj        String?  @unique
+  cpf         String?  @unique
+  phone       String?
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invoices    Invoice[]
+  receipts    Receipt[]
+  boletos     Boleto[]
+  documents   Document[]
+  files       FileStorage[]
+
+  @@map("clients")
+}
+
+model Invoice {
+  id          String   @id @default(uuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  // Invoice Details
+  number      String   @unique
+  series      String?
+  amount      Float
+  issueDate   DateTime @default(now())
+  description String?
+  
+  // NF-e Details
+  nfeKey      String?  @unique // Chave de acesso da NF-e
+  nfeXml      String?
+  nfePdf      String?  // Path to PDF file
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("invoices")
+}
+
+model Receipt {
+  id          String   @id @default(uuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  // Receipt Details
+  number      String   @unique
+  amount      Float
+  issueDate   DateTime @default(now())
+  description String?
+  pdfPath     String?  // Path to PDF file
+  
+  boletoId    String?  @unique
+  boleto      Boleto?  @relation(fields: [boletoId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("receipts")
+}
+
+model Boleto {
+  id            String       @id @default(uuid())
+  clientId      String
+  client        Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  // Boleto Details
+  number        String       @unique
+  amount        Float
+  dueDate       DateTime
+  description   String?
+  status        String       @default("PENDING") // "PENDING", "PAID", "CANCELLED", "EXPIRED"
+  
+  // Payment Gateway Details
+  externalId    String?      @unique // ID from payment gateway
+  barcode       String?
+  digitableLine String?      // Linha digitável
+  pdfUrl        String?
+  
+  paymentDate   DateTime?
+  paidAmount    Float?
+  
+  receipt       Receipt?
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("boletos")
+}
+
+model Document {
+  id          String       @id @default(uuid())
+  clientId    String
+  client      Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  name        String
+  type        String       // "CERTIFICATE", "INVENTORY", "GENERAL"
+  description String?
+  filePath    String
+  fileSize    Int
+  mimeType    String
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("documents")
+}
+
+model FileStorage {
+  id          String   @id @default(uuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  name        String
+  description String?
+  filePath    String
+  fileSize    Int
+  mimeType    String
+  folder      String?  // For organizing files
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("file_storage")
+}
+
+model EmailConfig {
+  id        String   @id @default(uuid())
+  
+  host      String
+  port      Int
+  user      String
+  password  String
+  from      String
+  secure    Boolean  @default(true)
+  
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("email_configs")
+}
+
+model PaymentConfirmation {
+  id          String   @id @default(uuid())
+  
+  boletoId    String
+  amount      Float
+  paymentDate DateTime
+  
+  // Automation flags
+  receiptGenerated Boolean @default(false)
+  invoiceGenerated Boolean @default(false)
+  
+  notes       String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("payment_confirmations")
+}
+
+model NfeConfig {
+  id              String   @id @default(uuid())
+  
+  environment     String   @default("HOMOLOGATION") // "PRODUCTION" or "HOMOLOGATION"
+  certificatePath String?  // Path to .pfx/.p12 file
+  certificatePass String?  // Password for the certificate (encrypted ideally, but plain for now/demo)
+  
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("nfe_configs")
+}
