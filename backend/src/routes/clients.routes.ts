@@ -35,20 +35,13 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
 
-        // Check if user is admin or the client themselves
         const client = await prisma.client.findUnique({
-            where: { id },
+            where: { userId: id as string },
             include: {
                 user: {
-                    select: {
-                        id: true,
-                        email: true,
-                        name: true,
-                        active: true,
-                        createdAt: true,
-                    },
-                },
-            },
+                    select: { name: true, email: true }
+                }
+            }
         });
 
         if (!client) {
@@ -142,32 +135,18 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
                 cpf,
                 phone,
                 address,
-                city,
-                state,
-                zipCode,
-            },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        email: true,
-                        name: true,
-                        active: true,
-                    },
-                },
-            },
-        });
-
-        // Update user if name or email provided (admin only)
-        if (req.user!.role === 'ADMIN' && (name || email)) {
-            await prisma.user.update({
-                where: { id: existingClient.userId },
+                where: { userId: id as string },
                 data: {
-                    ...(name && { name }),
-                    ...(email && { email }),
+                    companyName,
+                    cnpj,
+                    cpf,
+                    phone,
+                    address,
+                    city,
+                    state,
+                    zipCode,
                 },
             });
-        }
 
         res.json(client);
     } catch (error) {
@@ -181,7 +160,8 @@ router.delete('/:id', authMiddleware, adminOnly, async (req: AuthRequest, res: R
     try {
         const { id } = req.params;
 
-        await prisma.client.delete({ where: { id } });
+        // Delete user (cascade will delete client)
+        await prisma.user.delete({ where: { id: id as string } });
 
         res.json({ message: 'Cliente deletado com sucesso' });
     } catch (error) {
