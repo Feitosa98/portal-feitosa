@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
+import api from '@/lib/api';
 import { Save, FileKey, AlertCircle, FileText } from 'lucide-react';
 
 export default function NfeConfigPage() {
