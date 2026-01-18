@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import { UserPlus, Edit, Trash2, X } from 'lucide-react';
+import { UserPlus, Edit, Trash2, X, Search, Loader2 } from 'lucide-react';
 
 interface Client {
     id: string;
@@ -11,6 +11,10 @@ interface Client {
     cnpj?: string;
     cpf?: string;
     phone?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
     user: {
         id: string;
         name: string;
@@ -24,13 +28,19 @@ export default function ClientesPage() {
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [lookupLoading, setLookupLoading] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         password: '',
         companyName: '',
         cnpj: '',
+        cpf: '',
         phone: '',
+        address: '',
+        city: '',
+        state: '',
+        zipCode: '',
     });
 
     useEffect(() => {
@@ -53,6 +63,53 @@ export default function ClientesPage() {
         }
     };
 
+    const handleCNPJLookup = async () => {
+        if (!formData.cnpj || formData.cnpj.replace(/\D/g, '').length !== 14) {
+            alert('Digite um CNPJ válido');
+            return;
+        }
+
+        setLookupLoading(true);
+        try {
+            const response = await api.get(`/clients/cnpj/${formData.cnpj}`);
+            setFormData({
+                ...formData,
+                companyName: response.data.companyName,
+                address: response.data.address,
+                city: response.data.city,
+                state: response.data.state,
+                zipCode: response.data.zipCode,
+            });
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'Erro ao consultar CNPJ');
+        } finally {
+            setLookupLoading(false);
+        }
+    };
+
+    const handleCEPLookup = async () => {
+        if (!formData.zipCode || formData.zipCode.replace(/\D/g, '').length !== 8) {
+            alert('Digite um CEP válido');
+            return;
+        }
+
+        setLookupLoading(true);
+        try {
+            const response = await api.get(`/clients/cep/${formData.zipCode}`);
+            setFormData({
+                ...formData,
+                address: response.data.street,
+                city: response.data.city,
+                state: response.data.state,
+                zipCode: response.data.zipCode,
+            });
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'Erro ao consultar CEP');
+        } finally {
+            setLookupLoading(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
@@ -64,7 +121,12 @@ export default function ClientesPage() {
                 password: '',
                 companyName: '',
                 cnpj: '',
+                cpf: '',
                 phone: '',
+                address: '',
+                city: '',
+                state: '',
+                zipCode: '',
             });
             loadClients();
         } catch (error: any) {
@@ -87,6 +149,21 @@ export default function ClientesPage() {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         router.push('/login');
+    };
+
+    const formatCNPJ = (value: string) => {
+        const numbers = value.replace(/\D/g, '');
+        return numbers
+            .replace(/^(\d{2})(\d)/, '$1.$2')
+            .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+            .replace(/\.(\d{3})(\d)/, '.$1/$2')
+            .replace(/(\d{4})(\d)/, '$1-$2')
+            .substring(0, 18);
+    };
+
+    const formatCEP = (value: string) => {
+        const numbers = value.replace(/\D/g, '');
+        return numbers.replace(/^(\d{5})(\d)/, '$1-$2').substring(0, 9);
     };
 
     return (
@@ -146,7 +223,7 @@ export default function ClientesPage() {
                                             CNPJ/CPF
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Telefone
+                                            Cidade
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                             Status
@@ -178,13 +255,15 @@ export default function ClientesPage() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{client.phone || '-'}</div>
+                                                <div className="text-sm text-gray-900">
+                                                    {client.city ? `${client.city}/${client.state}` : '-'}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span
                                                     className={`px-2 py-1 text-xs font-semibold rounded-full ${client.user.active
-                                                            ? 'bg-green-100 text-green-800'
-                                                            : 'bg-red-100 text-red-800'
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-red-100 text-red-800'
                                                         }`}
                                                 >
                                                     {client.user.active ? 'Ativo' : 'Inativo'}
@@ -210,7 +289,7 @@ export default function ClientesPage() {
             {/* Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="p-6">
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-2xl font-bold text-gray-900">Novo Cliente</h2>
@@ -222,81 +301,196 @@ export default function ClientesPage() {
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Nome *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={formData.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                {/* Dados Básicos */}
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Dados de Acesso</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Nome *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={formData.name}
+                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Email *
-                                        </label>
-                                        <input
-                                            type="email"
-                                            required
-                                            value={formData.email}
-                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Email *
+                                            </label>
+                                            <input
+                                                type="email"
+                                                required
+                                                value={formData.email}
+                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Senha *
-                                        </label>
-                                        <input
-                                            type="password"
-                                            required
-                                            value={formData.password}
-                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                        />
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Senha *
+                                            </label>
+                                            <input
+                                                type="password"
+                                                required
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
                                     </div>
+                                </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Empresa
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.companyName}
-                                            onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                        />
+                                {/* Dados da Empresa */}
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Dados da Empresa</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                CNPJ
+                                            </label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={formData.cnpj}
+                                                    onChange={(e) =>
+                                                        setFormData({ ...formData, cnpj: formatCNPJ(e.target.value) })
+                                                    }
+                                                    placeholder="00.000.000/0000-00"
+                                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCNPJLookup}
+                                                    disabled={lookupLoading}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition disabled:opacity-50"
+                                                >
+                                                    {lookupLoading ? (
+                                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                                    ) : (
+                                                        <Search className="h-5 w-5" />
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                CPF
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.cpf}
+                                                onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                                                placeholder="000.000.000-00"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Razão Social / Nome da Empresa
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.companyName}
+                                                onChange={(e) =>
+                                                    setFormData({ ...formData, companyName: e.target.value })
+                                                }
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Telefone
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.phone}
+                                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                placeholder="(00) 00000-0000"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
                                     </div>
+                                </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            CNPJ
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.cnpj}
-                                            onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
+                                {/* Endereço */}
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Endereço</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">CEP</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={formData.zipCode}
+                                                    onChange={(e) =>
+                                                        setFormData({ ...formData, zipCode: formatCEP(e.target.value) })
+                                                    }
+                                                    placeholder="00000-000"
+                                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCEPLookup}
+                                                    disabled={lookupLoading}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition disabled:opacity-50"
+                                                >
+                                                    {lookupLoading ? (
+                                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                                    ) : (
+                                                        <Search className="h-5 w-5" />
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Telefone
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={formData.phone}
-                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                        />
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Endereço
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.address}
+                                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                                placeholder="Rua, número, complemento"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Cidade
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.city}
+                                                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Estado
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.state}
+                                                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                                                placeholder="UF"
+                                                maxLength={2}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 uppercase"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 

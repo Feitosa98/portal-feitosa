@@ -1,9 +1,45 @@
 import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware, adminOnly, AuthRequest } from '../middleware/auth.middleware';
+import { cnpjService } from '../services/cnpj.service';
+import { cepService } from '../services/cep.service';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+// Lookup CNPJ data
+router.get('/cnpj/:cnpj', authMiddleware, adminOnly, async (req: AuthRequest, res: Response) => {
+    try {
+        const { cnpj } = req.params;
+
+        if (!cnpjService.validate(cnpj)) {
+            return res.status(400).json({ error: 'CNPJ inválido' });
+        }
+
+        const data = await cnpjService.lookup(cnpj);
+        res.json(data);
+    } catch (error: any) {
+        console.error('CNPJ lookup error:', error);
+        res.status(500).json({ error: error.message || 'Erro ao consultar CNPJ' });
+    }
+});
+
+// Lookup CEP data
+router.get('/cep/:cep', authMiddleware, adminOnly, async (req: AuthRequest, res: Response) => {
+    try {
+        const { cep } = req.params;
+
+        if (!cepService.validate(cep)) {
+            return res.status(400).json({ error: 'CEP inválido' });
+        }
+
+        const data = await cepService.lookup(cep);
+        res.json(data);
+    } catch (error: any) {
+        console.error('CEP lookup error:', error);
+        res.status(500).json({ error: error.message || 'Erro ao consultar CEP' });
+    }
+});
 
 // Get all clients (Admin only)
 router.get('/', authMiddleware, adminOnly, async (req: AuthRequest, res: Response) => {
