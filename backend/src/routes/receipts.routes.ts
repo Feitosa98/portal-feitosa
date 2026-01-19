@@ -59,4 +59,86 @@ router.post('/', authMiddleware, adminOnly, async (req: AuthRequest, res: Respon
     }
 });
 
+// Regenerate receipt PDF (Admin only)
+router.post('/:id/regenerate', authMiddleware, adminOnly, async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const receipt = await prisma.receipt.findUnique({
+            where: { id },
+            include: {
+                client: { include: { user: { select: { name: true, email: true, cpf: true } } } },
+                boleto: true,
+            },
+        });
+
+        if (!receipt) {
+            return res.status(404).json({ error: 'Recibo não encontrado' });
+        }
+
+        const { receiptService } = require('../services/receipt.service');
+
+        // Prepare data for receipt generation
+        // Note: For older receipts, we might not have all item details if they weren't stored structurally.
+        // We will infer from description or use default.
+
+        let items = [];
+        if (receipt.boleto?.description) {
+            items.push({
+                name: receipt.boleto.description,
+                quantity: 1,
+                unit: 'un',
+                unitPrice: receipt.amount,
+                totalPrice: receipt.amount
+            });
+        } else {
+            // Fallback
+            items.push({
+                name: receipt.description || 'Serviços de Informática',
+                quantity: 1,
+                unit: 'un',
+                unitPrice: receipt.amount,
+                totalPrice: receipt.amount
+            });
+        }
+
+        const fileName = `REC${Date.now()}.pdf`;
+        const filePath = `uploads/receipts/${fileName}`;
+
+        await receiptService.generatePDF(
+            {
+                clientId: receipt.clientId,
+                amount: receipt.amount,
+                description: receipt.description || 'Pagamento recebido',
+                clientInfo: {
+                    name: receipt.client.user.name,
+                    companyName: receipt.client.companyName || undefined,
+                    cnpj: receipt.client.cnpj || undefined,
+                    cpf: receipt.client.cpf || receipt.client.user.cpf || undefined, // Adjust based on user schema if needed
+                    address: receipt.client.address || undefined,
+                    city: receipt.client.city || undefined,
+                    state: receipt.client.state || undefined,
+                    zipCode: receipt.client.zipCode || undefined,
+                },
+                items,
+                paymentDate: receipt.issueDate,
+                receiptNumber: receipt.number,
+            },
+            filePath
+        );
+
+        // Update receipt record with new path
+        const updatedReceipt = await prisma.receipt.update({
+            where: { id },
+            data: { pdfPath: filePath },
+        });
+
+        res.json(updatedReceipt);
+
+    } catch (error) {
+        console.error('Regenerate receipt error:', error);
+        res.status(500).json({ error: 'Erro ao regenerar recibo' });
+    }
+});
+
 export default router;
