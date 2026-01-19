@@ -1,8 +1,7 @@
-
 services:
   # Backend API
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: portal-backend
@@ -27,13 +26,13 @@ services:
       context: ./web
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://18.229.137.98/api
+        NEXT_PUBLIC_API_URL: http://54.233.47.221/api
     container_name: portal-web
     restart: always
     environment:
-      - NEXT_PUBLIC_API_URL=http://18.229.137.98/api
+      - NEXT_PUBLIC_API_URL=http://54.233.47.221/api
       - PORT=3000
-      - HOSTNAME=0.0.0.0  # Public IP for client-side access
+      - HOSTNAME=0.0.0.0 # Public IP for client-side access
     ports:
       - "3000:3000"
     networks:
