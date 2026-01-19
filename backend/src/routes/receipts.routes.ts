@@ -17,7 +17,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
             if (!client) return res.status(404).json({ error: 'Cliente não encontrado' });
             where.clientId = client.id;
         } else if (req.query.clientId) {
-            where.clientId = req.query.clientId as string;
+            where.clientId = String(req.query.clientId);
         }
 
         const receipts = await prisma.receipt.findMany({
@@ -63,11 +63,21 @@ router.post('/', authMiddleware, adminOnly, async (req: AuthRequest, res: Respon
 router.post('/:id/regenerate', authMiddleware, adminOnly, async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
+        const receiptId = Array.isArray(id) ? id[0] : id;
 
         const receipt = await prisma.receipt.findUnique({
-            where: { id },
+            where: { id: receiptId },
             include: {
-                client: { include: { user: { select: { name: true, email: true, cpf: true } } } },
+                client: {
+                    include: {
+                        user: {
+                            select: {
+                                name: true,
+                                email: true
+                            }
+                        }
+                    }
+                },
                 boleto: true,
             },
         });
@@ -79,9 +89,6 @@ router.post('/:id/regenerate', authMiddleware, adminOnly, async (req: AuthReques
         const { receiptService } = require('../services/receipt.service');
 
         // Prepare data for receipt generation
-        // Note: For older receipts, we might not have all item details if they weren't stored structurally.
-        // We will infer from description or use default.
-
         let items = [];
         if (receipt.boleto?.description) {
             items.push({
@@ -92,7 +99,6 @@ router.post('/:id/regenerate', authMiddleware, adminOnly, async (req: AuthReques
                 totalPrice: receipt.amount
             });
         } else {
-            // Fallback
             items.push({
                 name: receipt.description || 'Serviços de Informática',
                 quantity: 1,
@@ -105,20 +111,25 @@ router.post('/:id/regenerate', authMiddleware, adminOnly, async (req: AuthReques
         const fileName = `REC${Date.now()}.pdf`;
         const filePath = `uploads/receipts/${fileName}`;
 
+        // Safely access properties that we know exist due to 'include'
+        // Prisma return types can be tricky, so we rely on the runtime check above (!receipt)
+        const clientData = receipt.client;
+        const userData = clientData.user;
+
         await receiptService.generatePDF(
             {
                 clientId: receipt.clientId,
                 amount: receipt.amount,
                 description: receipt.description || 'Pagamento recebido',
                 clientInfo: {
-                    name: receipt.client.user.name,
-                    companyName: receipt.client.companyName || undefined,
-                    cnpj: receipt.client.cnpj || undefined,
-                    cpf: receipt.client.cpf || receipt.client.user.cpf || undefined, // Adjust based on user schema if needed
-                    address: receipt.client.address || undefined,
-                    city: receipt.client.city || undefined,
-                    state: receipt.client.state || undefined,
-                    zipCode: receipt.client.zipCode || undefined,
+                    name: userData.name,
+                    companyName: clientData.companyName || undefined,
+                    cnpj: clientData.cnpj || undefined,
+                    cpf: clientData.cpf || undefined,
+                    address: clientData.address || undefined,
+                    city: clientData.city || undefined,
+                    state: clientData.state || undefined,
+                    zipCode: clientData.zipCode || undefined,
                 },
                 items,
                 paymentDate: receipt.issueDate,
@@ -129,7 +140,7 @@ router.post('/:id/regenerate', authMiddleware, adminOnly, async (req: AuthReques
 
         // Update receipt record with new path
         const updatedReceipt = await prisma.receipt.update({
-            where: { id },
+            where: { id: receiptId },
             data: { pdfPath: filePath },
         });
 
