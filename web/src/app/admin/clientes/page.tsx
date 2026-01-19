@@ -71,7 +71,8 @@ export default function ClientesPage() {
 
         setLookupLoading(true);
         try {
-            const response = await api.get(`/clients/cnpj/${formData.cnpj}`);
+            const cleanCNPJ = formData.cnpj.replace(/\D/g, '');
+            const response = await api.get(`/clients/cnpj/${cleanCNPJ}`);
             setFormData({
                 ...formData,
                 companyName: response.data.companyName,
@@ -95,7 +96,8 @@ export default function ClientesPage() {
 
         setLookupLoading(true);
         try {
-            const response = await api.get(`/clients/cep/${formData.zipCode}`);
+            const cleanCEP = formData.zipCode.replace(/\D/g, '');
+            const response = await api.get(`/clients/cep/${cleanCEP}`);
             setFormData({
                 ...formData,
                 address: response.data.street,
