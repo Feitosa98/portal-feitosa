@@ -3,6 +3,10 @@
  * Generates professional receipts with company branding and client details
  */
 
+import PDFDocument from 'pdfkit';
+import * as fs from 'fs';
+import * as path from 'path';
+
 interface ReceiptData {
     clientId: string;
     amount: number;
@@ -33,10 +37,6 @@ class ReceiptService {
      * Generate receipt PDF
      */
     async generatePDF(data: ReceiptData, filePath: string): Promise<void> {
-        const PDFDocument = require('pdfkit');
-        const fs = require('fs');
-        const path = require('path');
-
         const fullPath = path.join(__dirname, '../../', filePath);
 
         // Ensure directory exists
