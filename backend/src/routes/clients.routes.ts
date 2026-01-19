@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 // Lookup CNPJ data
 router.get('/cnpj/:cnpj', authMiddleware, adminOnly, async (req: AuthRequest, res: Response) => {
     try {
-        const { cnpj } = req.params;
+        const cnpj = Array.isArray(req.params.cnpj) ? req.params.cnpj[0] : req.params.cnpj;
 
         if (!cnpjService.validate(cnpj)) {
             return res.status(400).json({ error: 'CNPJ inválido' });
@@ -27,7 +27,7 @@ router.get('/cnpj/:cnpj', authMiddleware, adminOnly, async (req: AuthRequest, re
 // Lookup CEP data
 router.get('/cep/:cep', authMiddleware, adminOnly, async (req: AuthRequest, res: Response) => {
     try {
-        const { cep } = req.params;
+        const cep = Array.isArray(req.params.cep) ? req.params.cep[0] : req.params.cep;
 
         if (!cepService.validate(cep)) {
             return res.status(400).json({ error: 'CEP inválido' });
