@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { nfeService } from './nfe.service';
 import { emailService } from './email.service';
+import { receiptService } from './receipt.service';
 
 const prisma = new PrismaClient();
 
@@ -63,7 +64,6 @@ class AutomationService {
             const receiptNumber = `${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}-${new Date().getFullYear().toString().slice(-2)}`;
 
             // Generate PDF using receipt service
-            const { receiptService } = require('./receipt.service');
             const fileName = `REC${Date.now()}.pdf`;
             const filePath = `uploads/receipts/${fileName}`;
 
