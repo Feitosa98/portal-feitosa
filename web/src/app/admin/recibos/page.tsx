@@ -7,18 +7,7 @@ import { Receipt, Download, RefreshCw } from 'lucide-react';
 
 // ... (in ReceiptsPage component)
 
-const handleRegenerate = async (id: string) => {
-    if (!confirm('Deseja regenerar este recibo com o novo layout?')) return;
 
-    try {
-        await api.post(`/receipts/${id}/regenerate`);
-        alert('Recibo regenerado com sucesso!');
-        loadReceipts();
-    } catch (error) {
-        console.error('Error regenerating receipt:', error);
-        alert('Erro ao regenerar recibo');
-    }
-};
 
 // ... (inside map)
 
@@ -81,6 +70,19 @@ export default function RecibosPage() {
             console.error('Error loading receipts:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleRegenerate = async (id: string) => {
+        if (!confirm('Deseja regenerar este recibo com o novo layout?')) return;
+
+        try {
+            await api.post(`/receipts/${id}/regenerate`);
+            alert('Recibo regenerado com sucesso!');
+            loadReceipts();
+        } catch (error) {
+            console.error('Error regenerating receipt:', error);
+            alert('Erro ao regenerar recibo');
         }
     };
 
@@ -176,17 +178,26 @@ export default function RecibosPage() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                {receipt.pdfPath && (
-                                                    <a
-                                                        href={receipt.pdfPath}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-blue-600 hover:text-blue-900 flex items-center justify-end gap-1"
+                                                <div className="flex items-center justify-end gap-3">
+                                                    <button
+                                                        onClick={() => handleRegenerate(receipt.id)}
+                                                        className="text-gray-600 hover:text-blue-600"
+                                                        title="Regenerar PDF (Atualizar Layout)"
                                                     >
-                                                        <Download className="h-4 w-4" />
-                                                        PDF
-                                                    </a>
-                                                )}
+                                                        <RefreshCw className="h-4 w-4" />
+                                                    </button>
+                                                    {receipt.pdfPath && (
+                                                        <a
+                                                            href={receipt.pdfPath}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                                                        >
+                                                            <Download className="h-4 w-4" />
+                                                            PDF
+                                                        </a>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
