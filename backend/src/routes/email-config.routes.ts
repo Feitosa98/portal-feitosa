@@ -58,4 +58,23 @@ router.post('/', authMiddleware, adminOnly, async (req: AuthRequest, res: Respon
     }
 });
 
+// Test email config (Admin only)
+router.post('/test', authMiddleware, adminOnly, async (req: AuthRequest, res: Response) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ error: 'Email é obrigatório' });
+        }
+
+        const { emailService } = require('../services/email.service');
+        await emailService.sendTestEmail(email);
+
+        res.json({ message: 'Email de teste enviado com sucesso' });
+    } catch (error: any) {
+        console.error('Test email error:', error);
+        res.status(500).json({ error: error.message || 'Erro ao enviar email de teste' });
+    }
+});
+
 export default router;

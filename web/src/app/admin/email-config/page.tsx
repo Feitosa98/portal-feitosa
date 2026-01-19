@@ -9,6 +9,7 @@ export default function EmailConfigPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [testing, setTesting] = useState(false);
     const [formData, setFormData] = useState({
         host: '',
         port: 587,
@@ -56,6 +57,21 @@ export default function EmailConfigPage() {
             alert(error.response?.data?.error || 'Erro ao salvar configuração');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleTestEmail = async () => {
+        const email = prompt('Digite o email para receber o teste:');
+        if (!email) return;
+
+        setTesting(true);
+        try {
+            await api.post('/email-config/test', { email });
+            alert('Email de teste enviado com sucesso! Verifique sua caixa de entrada.');
+        } catch (error: any) {
+            alert(error.response?.data?.error || 'Erro ao enviar email de teste');
+        } finally {
+            setTesting(false);
         }
     };
 

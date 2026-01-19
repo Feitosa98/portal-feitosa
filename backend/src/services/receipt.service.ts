@@ -51,9 +51,23 @@ class ReceiptService {
 
             doc.pipe(stream);
 
-            // Company Header - Centered
+            // Logo
+            const logoPath = path.join(__dirname, '../assets/logo.png');
+            if (fs.existsSync(logoPath)) {
+                doc.image(logoPath, 50, 40, { width: 80 });
+            }
+
+            // Company Header - Centered (Adjusted for logo)
             doc.fontSize(18).font('Helvetica-Bold');
-            doc.text('Feitosa Soluções em Informática', 50, 50, { align: 'center', width: 495 });
+            // If logo exists, shift text slightly or keep centered but be mindful of overlap
+            // With logo at x=50, width=80, it takes space up to x=130. 
+            // We can keep text centered or align it next to logo.
+            // Let's try centering the text relative to the page, but maybe moving it down a bit or handling layout.
+            // Actually, let's put the logo on the left and text centered?
+            // Or logo centered above text?
+            // Based on the user request "add logo", putting it at top left is standard.
+
+            doc.text('Feitosa Soluções em Informática', 0, 50, { align: 'center' }); // 0 to default width center
 
             doc.fontSize(9).font('Helvetica');
             doc.text('36623424000160', { align: 'center' });
