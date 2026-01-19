@@ -51,177 +51,170 @@ class ReceiptService {
 
             doc.pipe(stream);
 
-            // Company Header
-            doc.fontSize(16).font('Helvetica-Bold').text('Feitosa Soluções em Informática', { align: 'center' });
-            doc.fontSize(10).font('Helvetica');
+            // Company Header - Centered
+            doc.fontSize(18).font('Helvetica-Bold');
+            doc.text('Feitosa Soluções em Informática', 50, 50, { align: 'center', width: 495 });
+
+            doc.fontSize(9).font('Helvetica');
             doc.text('36623424000160', { align: 'center' });
             doc.text('Rua Coronel Jorge Teixeira', { align: 'center' });
             doc.text('69088-561 - Manaus/AM', { align: 'center' });
 
-            // Email aligned to the right
-            const emailY = 50;
-            doc.text('iagofeitosa3@gmail.com', 450, emailY, { width: 100, align: 'right' });
+            // Email - Right aligned
+            doc.fontSize(9);
+            doc.text('iagofeitosa3@gmail.com', 400, 95, { width: 145, align: 'right' });
 
             doc.moveDown(2);
 
-            // Client Data Section
-            doc.fontSize(12).font('Helvetica-Bold').text('Dados do Cliente', 50, doc.y);
+            // Client Data Section Header
+            const clientSectionY = doc.y;
+            doc.fontSize(11).font('Helvetica-Bold');
+            doc.text('Dados do Cliente', 50, clientSectionY);
             doc.moveDown(0.5);
 
+            // Client Info
             const clientDataY = doc.y;
             doc.fontSize(10).font('Helvetica');
 
-            // Client name on the left
             const clientName = data.clientInfo?.companyName || data.clientInfo?.name || 'Cliente';
             doc.text(clientName, 50, clientDataY);
 
             // Date on the right
             const dateText = `Data: ${data.paymentDate ? new Date(data.paymentDate).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR')}`;
-            doc.text(dateText, 400, clientDataY, { width: 150, align: 'right' });
+            doc.text(dateText, 350, clientDataY, { width: 195, align: 'right' });
 
-            doc.moveDown(0.5);
+            doc.moveDown(0.3);
 
-            // Client address (if available)
+            // Client address
             if (data.clientInfo?.address) {
-                const fullAddress = [
+                const addressParts = [
                     data.clientInfo.address,
                     data.clientInfo.city,
                     data.clientInfo.state,
                     data.clientInfo.zipCode
                 ].filter(Boolean).join(', ');
-                doc.text(fullAddress, 50);
+                doc.fontSize(9).text(addressParts, 50);
             }
-
-            doc.moveDown(1);
-
-            // Receipt Number Header (gray background)
-            const receiptHeaderY = doc.y;
-            doc.rect(50, receiptHeaderY, 495, 25).fillAndStroke('#CCCCCC', '#000000');
-            doc.fillColor('#000000').fontSize(11).font('Helvetica-Bold');
-            doc.text(
-                `ORDEM DE SERVIÇO Nº ${data.receiptNumber || '0000-00'}`,
-                50,
-                receiptHeaderY + 7,
-                { width: 495, align: 'center' }
-            );
-
-            doc.moveDown(2);
-
-            // Services Section
-            if (data.items && data.items.length > 0) {
-                doc.fontSize(12).font('Helvetica-Bold').text('Serviços', 50, doc.y);
-                doc.moveDown(0.5);
-
-                // Services Table Header
-                const tableTop = doc.y;
-                const tableHeaders = ['Nome', 'Quantidade', 'Unidade', 'Valor Unitário', 'Valor Total'];
-                const colWidths = [200, 80, 60, 80, 75];
-                let xPos = 50;
-
-                doc.fontSize(9).font('Helvetica-Bold').fillColor('#666666');
-                tableHeaders.forEach((header, i) => {
-                    doc.text(header, xPos, tableTop, { width: colWidths[i], align: i === 0 ? 'left' : 'right' });
-                    xPos += colWidths[i];
-                });
-
-                doc.moveDown(0.5);
-
-                // Services Table Rows
-                doc.font('Helvetica').fillColor('#000000');
-                data.items.forEach((item) => {
-                    const rowY = doc.y;
-                    xPos = 50;
-
-                    doc.text(item.name, xPos, rowY, { width: colWidths[0] });
-                    xPos += colWidths[0];
-
-                    doc.text(item.quantity.toString(), xPos, rowY, { width: colWidths[1], align: 'right' });
-                    xPos += colWidths[1];
-
-                    doc.text(item.unit, xPos, rowY, { width: colWidths[2], align: 'right' });
-                    xPos += colWidths[2];
-
-                    doc.text(`R$ ${item.unitPrice.toFixed(2)}`, xPos, rowY, { width: colWidths[3], align: 'right' });
-                    xPos += colWidths[3];
-
-                    doc.text(`R$ ${item.totalPrice.toFixed(2)}`, xPos, rowY, { width: colWidths[4], align: 'right' });
-
-                    doc.moveDown(0.8);
-                });
-
-                doc.moveDown(1);
-            }
-
-            // Total Section
-            const totalY = doc.y;
-            doc.fontSize(10).font('Helvetica');
-            doc.text('Total Serviços', 400, totalY, { width: 100, align: 'right' });
-            doc.font('Helvetica-Bold');
-            doc.text(`R$ ${data.amount.toFixed(2)}`, 500, totalY, { width: 45, align: 'right' });
 
             doc.moveDown(1.5);
 
-            // Subtotal and Total
-            const subtotalY = doc.y;
-            doc.font('Helvetica');
-            doc.text('Subtotal', 400, subtotalY, { width: 100, align: 'right' });
+            // Receipt Number Header (gray background)
+            const receiptHeaderY = doc.y;
+            doc.rect(50, receiptHeaderY, 495, 22).fillAndStroke('#D3D3D3', '#000000');
+            doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
+            doc.text(
+                `ORDEM DE SERVIÇO Nº ${data.receiptNumber || '0000-00'}`,
+                50,
+                receiptHeaderY + 6,
+                { width: 495, align: 'center' }
+            );
+
+            doc.moveDown(1.5);
+
+            // Services Section
+            if (data.items && data.items.length > 0) {
+                const servicesY = doc.y;
+
+                // Services Table Header
+                doc.fontSize(10).font('Helvetica-Bold').fillColor('#000000');
+                doc.text('Nome', 50, servicesY, { width: 220, continued: false });
+                doc.text('Quantidade', 270, servicesY, { width: 70, align: 'center' });
+                doc.text('Unidade', 340, servicesY, { width: 60, align: 'center' });
+                doc.text('Valor Unitário', 400, servicesY, { width: 70, align: 'right' });
+                doc.text('Valor Total', 470, servicesY, { width: 75, align: 'right' });
+
+                doc.moveDown(0.8);
+
+                // Services Table Rows
+                doc.font('Helvetica').fontSize(9);
+                data.items.forEach((item) => {
+                    const rowY = doc.y;
+
+                    doc.text(item.name, 50, rowY, { width: 220 });
+                    doc.text(item.quantity.toString(), 270, rowY, { width: 70, align: 'center' });
+                    doc.text(item.unit, 340, rowY, { width: 60, align: 'center' });
+                    doc.text(`R$ ${item.unitPrice.toFixed(2)}`, 400, rowY, { width: 70, align: 'right' });
+                    doc.text(`R$ ${item.totalPrice.toFixed(2)}`, 470, rowY, { width: 75, align: 'right' });
+
+                    doc.moveDown(0.6);
+                });
+
+                doc.moveDown(0.5);
+            }
+
+            // Totals Section - Right aligned
+            const totalsX = 370;
+            let currentY = doc.y;
+
+            doc.fontSize(9).font('Helvetica');
+            doc.text('Total Serviços', totalsX, currentY, { width: 100, align: 'right' });
             doc.font('Helvetica-Bold');
-            doc.text(`R$ ${data.amount.toFixed(2)}`, 500, subtotalY, { width: 45, align: 'right' });
+            doc.text(`R$ ${data.amount.toFixed(2)}`, totalsX + 100, currentY, { width: 75, align: 'right' });
 
-            doc.moveDown(0.5);
+            currentY += 20;
+            doc.font('Helvetica');
+            doc.text('Subtotal', totalsX, currentY, { width: 100, align: 'right' });
+            doc.font('Helvetica-Bold');
+            doc.text(`R$ ${data.amount.toFixed(2)}`, totalsX + 100, currentY, { width: 75, align: 'right' });
 
-            const finalTotalY = doc.y;
-            doc.fontSize(11).font('Helvetica-Bold');
-            doc.text('Total', 400, finalTotalY, { width: 100, align: 'right' });
-            doc.text(`R$ ${data.amount.toFixed(2)}`, 500, finalTotalY, { width: 45, align: 'right' });
+            currentY += 20;
+            doc.fontSize(10).font('Helvetica-Bold');
+            doc.text('Total', totalsX, currentY, { width: 100, align: 'right' });
+            doc.text(`R$ ${data.amount.toFixed(2)}`, totalsX + 100, currentY, { width: 75, align: 'right' });
 
             doc.moveDown(2);
 
             // Payment Section
-            doc.fontSize(12).font('Helvetica-Bold').text('Pagamento(s)', 50, doc.y);
-            doc.moveDown(0.5);
+            const paymentY = doc.y;
+            doc.fontSize(10).font('Helvetica-Bold').fillColor('#000000');
+            doc.text('Pagamento(s)', 50, paymentY);
+            doc.moveDown(0.8);
 
+            // Payment Table Header
             const paymentTableY = doc.y;
-            doc.fontSize(9).font('Helvetica-Bold').fillColor('#666666');
+            doc.fontSize(9).font('Helvetica-Bold');
             doc.text('Pagamento', 50, paymentTableY, { width: 200 });
-            doc.text('Vencimento', 300, paymentTableY, { width: 100, align: 'right' });
+            doc.text('Vencimento', 300, paymentTableY, { width: 100, align: 'center' });
             doc.text('Valor', 450, paymentTableY, { width: 95, align: 'right' });
 
-            doc.moveDown(0.5);
+            doc.moveDown(0.6);
 
-            doc.font('Helvetica').fillColor('#000000');
+            // Payment Row
             const paymentRowY = doc.y;
+            doc.font('Helvetica');
             doc.text('À vista', 50, paymentRowY);
             doc.text(
                 data.paymentDate ? new Date(data.paymentDate).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
                 300,
                 paymentRowY,
-                { width: 100, align: 'right' }
+                { width: 100, align: 'center' }
             );
             doc.text(`R$ ${data.amount.toFixed(2)}`, 450, paymentRowY, { width: 95, align: 'right' });
 
             doc.moveDown(2);
 
             // Observations Section
-            doc.fontSize(12).font('Helvetica-Bold').text('Observações', 50, doc.y);
+            const obsY = doc.y;
+            doc.fontSize(10).font('Helvetica-Bold');
+            doc.text('Observações', 50, obsY);
             doc.moveDown(0.5);
-            doc.fontSize(10).font('Helvetica');
-            doc.text('Garantia: 90 Dias', 50, doc.y);
+            doc.fontSize(9).font('Helvetica');
+            doc.text('Garantia: 90 Dias', 50);
 
             // Signature Section (at bottom of page)
-            const signatureY = 650;
-            doc.moveDown(4);
+            const signatureY = 700;
 
-            // Signature line for company
+            // Company signature line
             doc.moveTo(80, signatureY).lineTo(250, signatureY).stroke();
-            doc.fontSize(9).font('Helvetica-Bold').text('Feitosa Soluções em Informática', 80, signatureY + 10, {
+            doc.fontSize(9).font('Helvetica-Bold');
+            doc.text('Feitosa Soluções em Informática', 80, signatureY + 8, {
                 width: 170,
                 align: 'center',
             });
 
-            // Signature line for client
+            // Client signature line
             doc.moveTo(320, signatureY).lineTo(490, signatureY).stroke();
-            doc.text(clientName, 320, signatureY + 10, { width: 170, align: 'center' });
+            doc.text(clientName, 320, signatureY + 8, { width: 170, align: 'center' });
 
             doc.end();
 
